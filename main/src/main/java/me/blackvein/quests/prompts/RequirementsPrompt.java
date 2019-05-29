@@ -19,6 +19,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import com.gmail.nossr50.datatypes.skills.PrimarySkillType;
 import org.bukkit.ChatColor;
 import org.bukkit.conversations.ConversationContext;
 import org.bukkit.conversations.FixedSetPrompt;
@@ -26,7 +27,6 @@ import org.bukkit.conversations.Prompt;
 import org.bukkit.conversations.StringPrompt;
 import org.bukkit.inventory.ItemStack;
 
-import com.gmail.nossr50.datatypes.skills.SkillType;
 import com.herocraftonline.heroes.characters.classes.HeroClass;
 
 import me.blackvein.quests.CustomRequirement;
@@ -693,7 +693,7 @@ public class RequirementsPrompt extends FixedSetPrompt {
 		@Override
 		public String getPromptText(ConversationContext context) {
 			String skillList = ChatColor.DARK_GREEN + Lang.get("skillListTitle") + "\n";
-			SkillType[] skills = SkillType.values();
+			PrimarySkillType[] skills = PrimarySkillType.values();
 			for (int i = 0; i < skills.length; i++) {
 				if (i == (skills.length - 1)) {
 					skillList += ChatColor.GREEN + skills[i].getName() + "\n";

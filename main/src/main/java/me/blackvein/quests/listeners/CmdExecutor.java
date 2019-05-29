@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.Map.Entry;
 
+import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import me.blackvein.quests.Quest;
 import me.blackvein.quests.Quester;
 import me.blackvein.quests.Quests;
@@ -727,7 +728,7 @@ public class CmdExecutor implements CommandExecutor {
 								Player p = quester.getPlayer();
 								WorldGuardAPI api = plugin.getDependencies().getWorldGuardApi();
 								RegionManager rm = api.getRegionManager(p.getWorld());
-								Iterator<ProtectedRegion> it = rm.getApplicableRegions(p.getLocation()).iterator();
+								Iterator<ProtectedRegion> it = rm.getApplicableRegions(BukkitAdapter.asBlockVector(p.getLocation())).iterator();
 								while (it.hasNext()) {
 									ProtectedRegion pr = it.next();
 									if (pr.getId().equalsIgnoreCase(q.getRegion())) {

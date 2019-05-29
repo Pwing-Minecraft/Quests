@@ -19,6 +19,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.UUID;
 
+import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -144,7 +145,7 @@ public class PlayerListener implements Listener {
 									Player p = quester.getPlayer();
 									WorldGuardAPI api = plugin.getDependencies().getWorldGuardApi();
 									RegionManager rm = api.getRegionManager(p.getWorld());
-									Iterator<ProtectedRegion> it = rm.getApplicableRegions(p.getLocation()).iterator();
+									Iterator<ProtectedRegion> it = rm.getApplicableRegions(BukkitAdapter.asBlockVector(p.getLocation())).iterator();
 									while (it.hasNext()) {
 										ProtectedRegion pr = it.next();
 										if (pr.getId().equalsIgnoreCase(quest.getRegion())) {
