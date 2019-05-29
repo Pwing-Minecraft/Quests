@@ -6,7 +6,7 @@
     <groupId>me.blackvein.quests</groupId>
 
     <artifactId>quests-parent</artifactId>
-    <version>3.7.0</version>
+    <version>3.7.1</version>
     <name>quests</name>
     <url>https://github.com/PikaMug/Quests/</url>
 
