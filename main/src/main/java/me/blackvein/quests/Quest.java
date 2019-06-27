@@ -18,6 +18,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
 
+import com.gmail.nossr50.datatypes.skills.PrimarySkillType;
+import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -31,7 +33,6 @@ import com.alessiodp.parties.api.interfaces.Party;
 import com.codisimus.plugins.phatloots.PhatLootsAPI;
 import com.codisimus.plugins.phatloots.loot.CommandLoot;
 import com.codisimus.plugins.phatloots.loot.LootBundle;
-import com.gmail.nossr50.datatypes.skills.SkillType;
 import com.gmail.nossr50.util.player.UserManager;
 import com.herocraftonline.heroes.characters.Hero;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
@@ -165,6 +166,10 @@ public class Quest {
 	 * @param q Player to force
 	 */
 	public void nextStage(Quester q) {
+		if (q.getCurrentStage(this) == null) {
+			plugin.getLogger().severe("Current stage was null for quester " + q.getPlayer().getUniqueId());
+			return;
+		}
 		String stageCompleteMessage = q.getCurrentStage(this).completeMessage;
 		if (stageCompleteMessage != null) {
 			q.getPlayer().sendMessage(plugin.parseStringWithPossibleLineBreaks(stageCompleteMessage, this, q.getPlayer()));
@@ -357,7 +362,7 @@ public class Quest {
 			}
 		}
 		for (String s : reqs.getMcmmoSkills()) {
-			final SkillType st = Quests.getMcMMOSkill(s);
+			final PrimarySkillType st = Quests.getMcMMOSkill(s);
 			final int lvl = reqs.getMcmmoAmounts().get(reqs.getMcmmoSkills().indexOf(s));
 			if (UserManager.getPlayer(player).getProfile().getSkillLevel(st) < lvl) {
 				return false;
@@ -732,7 +737,7 @@ public class Quest {
 		if (region == null) {
 			return true;
 		} else {
-			ApplicableRegionSet ars = plugin.getDependencies().getWorldGuardApi().getRegionManager(player.getWorld()).getApplicableRegions(player.getLocation());
+			ApplicableRegionSet ars = plugin.getDependencies().getWorldGuardApi().getRegionManager(player.getWorld()).getApplicableRegions(BukkitAdapter.asBlockVector(player.getLocation()));
 			Iterator<ProtectedRegion> i = ars.iterator();
 			while (i.hasNext()) {
 				ProtectedRegion pr = i.next();

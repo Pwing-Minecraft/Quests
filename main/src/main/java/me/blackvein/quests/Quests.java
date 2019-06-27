@@ -41,6 +41,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Level;
 
+import com.gmail.nossr50.datatypes.skills.PrimarySkillType;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Color;
@@ -76,7 +77,6 @@ import org.bukkit.potion.PotionEffectType;
 
 import com.codisimus.plugins.phatloots.PhatLootsAPI;
 import com.gmail.nossr50.datatypes.player.McMMOPlayer;
-import com.gmail.nossr50.datatypes.skills.SkillType;
 import com.gmail.nossr50.util.player.UserManager;
 import com.herocraftonline.heroes.characters.Hero;
 import com.herocraftonline.heroes.characters.classes.HeroClass;
@@ -246,8 +246,6 @@ public class Quests extends JavaPlugin implements ConversationAbandonedListener 
 		}
 		return Optional.empty();
 	}
-	
-	
 	
 	public List<CustomReward> getCustomRewards() {
 		return customRewards;
@@ -1781,6 +1779,12 @@ public class Quests extends JavaPlugin implements ConversationAbandonedListener 
 		if (config.contains("quests." + questKey + ".options.allow-commands")) {
 			opts.setAllowCommands(config.getBoolean("quests." + questKey + ".options.allow-commands"));
 		}
+		if (config.contains("quests." + questKey + ".options.allow-quitting")) {
+			opts.setAllowQuitting(config.getBoolean("quests." + questKey + ".options.allow-quitting"));
+		} else if (getConfig().contains("allow-quitting")) {
+			// Legacy
+			opts.setAllowQuitting(getConfig().getBoolean("allow-quitting"));
+		}
 		if (config.contains("quests." + questKey + ".options.use-dungeonsxl-plugin")) {
 			opts.setUseDungeonsXLPlugin(config.getBoolean("quests." + questKey + ".options.use-dungeonsxl-plugin"));
 		}
@@ -3038,8 +3042,8 @@ public class Quests extends JavaPlugin implements ConversationAbandonedListener 
 		return new PotionEffect(potionType, duration, amplifier);
 	}
 
-	public static SkillType getMcMMOSkill(String s) {
-		return SkillType.getSkill(s);
+	public static PrimarySkillType getMcMMOSkill(String s) {
+		return PrimarySkillType.getSkill(s);
 	}
 	
 	/**
@@ -3287,7 +3291,7 @@ public class Quests extends JavaPlugin implements ConversationAbandonedListener 
 		return false;
 	}
 
-	public static int getMCMMOSkillLevel(SkillType st, String player) {
+	public static int getMCMMOSkillLevel(PrimarySkillType st, String player) {
 		McMMOPlayer mPlayer = UserManager.getPlayer(player);
 		if (mPlayer == null) {
 			return -1;

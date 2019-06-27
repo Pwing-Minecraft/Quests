@@ -4,7 +4,7 @@
     <parent>
         <groupId>me.blackvein.quests</groupId>
         <artifactId>quests-parent</artifactId>
-        <version>3.7.0</version>
+        <version>3.7.1</version>
     </parent>
     <artifactId>quests-main</artifactId>
     
@@ -74,9 +74,10 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-	        <groupId>com.github.mcMMO-Dev</groupId>
-	        <artifactId>mcMMO-Classic</artifactId>
-	        <version>master-82f97cbe04-1</version>
+	        <groupId>com.gmail.nossr50.mcMMO</groupId>
+	        <artifactId>mcMMO</artifactId>
+	        <version>2.1.66</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.herocraftonline.heroes</groupId>
@@ -110,7 +111,7 @@
         <dependency>
 	        <groupId>com.github.PikaMug</groupId>
 	        <artifactId>PhatLoots</artifactId>
-	        <version>-SNAPSHOT</version>
+	        <version>9151276fe2</version>
 	    </dependency>
         <dependency>
 	        <groupId>com.github.DRE2N</groupId>

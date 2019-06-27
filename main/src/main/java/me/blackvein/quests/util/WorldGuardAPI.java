@@ -91,7 +91,7 @@ public class WorldGuardAPI {
                     return;
                 }
             } else {
-                regionContainer = worldGuardPlugin.getRegionContainer();
+                // regionContainer = worldGuardPlugin.getRegionContainer();
                 try {
                     regionContainerGetMethod = regionContainer.getClass().getMethod("get", World.class);
 
