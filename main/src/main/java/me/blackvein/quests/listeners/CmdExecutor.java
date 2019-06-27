@@ -437,7 +437,12 @@ public class CmdExecutor implements CommandExecutor {
 	private boolean questsActions(final CommandSender cs) {
 		if (cs.hasPermission("quests.events.*") || cs.hasPermission("quests.actions.*") 
 				|| cs.hasPermission("quests.actions.editor") || cs.hasPermission("quests.events.editor")) {
-			plugin.getEventFactory().getConversationFactory().buildConversation((Conversable) cs).begin();
+			Conversable c = (Conversable) cs;
+			if (!c.isConversing()) {
+				plugin.getEventFactory().getConversationFactory().buildConversation(c).begin();
+			} else {
+				cs.sendMessage(ChatColor.RED + Lang.get("duplicateEditor"));
+			}
 		} else {
 			cs.sendMessage(ChatColor.RED + Lang.get("NoPermission"));
 		}
@@ -446,7 +451,12 @@ public class CmdExecutor implements CommandExecutor {
 
 	private boolean questsEditor(final CommandSender cs) {
 		if (cs.hasPermission("quests.editor.*") || cs.hasPermission("quests.editor.editor")) {
-			plugin.getQuestFactory().getConversationFactory().buildConversation((Conversable) cs).begin();
+			Conversable c = (Conversable) cs;
+			if (!c.isConversing()) {
+				plugin.getQuestFactory().getConversationFactory().buildConversation(c).begin();
+			} else {
+				cs.sendMessage(ChatColor.RED + Lang.get("duplicateEditor"));
+			}
 		} else {
 			cs.sendMessage(ChatColor.RED + Lang.get("NoPermission"));
 		}
@@ -566,14 +576,13 @@ public class CmdExecutor implements CommandExecutor {
 	@SuppressWarnings("deprecation")
 	private void questsJournal(final Player player) {
 		Quester quester = plugin.getQuester(player.getUniqueId());
+		Inventory inv = player.getInventory();
 		if (quester.hasJournal) {
-			Inventory inv = player.getInventory();
 			ItemStack[] arr = inv.getContents();
 			for (int i = 0; i < arr.length; i++) {
 				if (arr[i] != null) {
 					if (ItemUtil.isJournal(arr[i])) {
 						inv.setItem(i, null);
-						break;
 					}
 				}
 			}
@@ -588,10 +597,8 @@ public class CmdExecutor implements CommandExecutor {
 			player.sendMessage(ChatColor.YELLOW + Lang.get(player, "journalTaken"));
 			quester.hasJournal = true;
 			quester.updateJournal();
-		} else {
-			Inventory inv = player.getInventory();
+		} else if (inv.firstEmpty() != -1) {
 			ItemStack[] arr = inv.getContents();
-			boolean given = false;
 			for (int i = 0; i < arr.length; i++) {
 				if (arr[i] == null) {
 					ItemStack stack = new ItemStack(Material.WRITTEN_BOOK, 1);
@@ -600,15 +607,13 @@ public class CmdExecutor implements CommandExecutor {
 					stack.setItemMeta(meta);
 					inv.setItem(i, stack);
 					player.sendMessage(ChatColor.YELLOW + Lang.get(player, "journalTaken"));
-					given = true;
+					quester.hasJournal = true;
+					quester.updateJournal();
 					break;
 				}
 			}
-			if (given) {
-				quester.hasJournal = true;
-				quester.updateJournal();
-			} else
-				player.sendMessage(ChatColor.YELLOW + Lang.get(player, "journalNoRoom"));
+		} else {
+			player.sendMessage(ChatColor.YELLOW + Lang.get(player, "journalNoRoom"));
 		}
 	}
 
@@ -620,17 +625,17 @@ public class CmdExecutor implements CommandExecutor {
 			}
 			Quester quester = plugin.getQuester(player.getUniqueId());
 			if (quester.getCurrentQuests().isEmpty() == false) {
-				Quest q = plugin.getQuest(MiscUtil.concatArgArray(args, 1, args.length - 1, ' '));
-				if (q != null) {
-					if (q.getOptions().getAllowQuitting()) {
-						QuestQuitEvent event = new QuestQuitEvent(q, quester);
+				Quest quest = plugin.getQuest(concatArgArray(args, 1, args.length - 1, ' '));
+				if (quest != null) {
+					if (quest.getOptions().getAllowQuitting()) {
+						QuestQuitEvent event = new QuestQuitEvent(quest, quester);
 						plugin.getServer().getPluginManager().callEvent(event);
 						if (event.isCancelled()) {
 							return;
 						}
-						quester.hardQuit(q);
+						quester.hardQuit(quest);
 						String msg = Lang.get("questQuit");
-						msg = msg.replace("<quest>", ChatColor.DARK_PURPLE + q.getName() + ChatColor.YELLOW);
+						msg = msg.replace("<quest>", ChatColor.DARK_PURPLE + quest.getName() + ChatColor.YELLOW);
 						player.sendMessage(ChatColor.YELLOW + msg);
 						quester.saveData();
 						quester.loadData();
@@ -655,32 +660,7 @@ public class CmdExecutor implements CommandExecutor {
 				if (args.length == 1) {
 					player.sendMessage(ChatColor.YELLOW + Lang.get(player, "COMMAND_TAKE_USAGE"));
 				} else {
-					String name = null;
-					if (args.length == 2) {
-						name = args[1].toLowerCase();
-					} else {
-						boolean first = true;
-						int lastIndex = (args.length - 1);
-						int index = 0;
-						for (String s : args) {
-							if (index != 0) {
-								if (first) {
-									first = false;
-									if (args.length > 2) {
-										name = s.toLowerCase() + " ";
-									} else {
-										name = s.toLowerCase();
-									}
-								} else if (index == lastIndex) {
-									name = name + s.toLowerCase();
-								} else {
-									name = name + s.toLowerCase() + " ";
-								}
-							}
-							index++;
-						}
-					}
-					Quest questToFind = plugin.getQuest(name);
+					Quest questToFind = plugin.getQuest(concatArgArray(args, 1, args.length - 1, ' '));
 					if (questToFind != null) {
 						final Quest q = questToFind;
 						final Quester quester = plugin.getQuester(player.getUniqueId());
@@ -1169,7 +1149,7 @@ public class CmdExecutor implements CommandExecutor {
 					msg = msg.replace("<player>", target.getName());
 					cs.sendMessage(ChatColor.YELLOW + msg);
 				} else {
-					Quest quest = plugin.getQuest(MiscUtil.concatArgArray(args, 2, args.length - 1, ' '));
+					Quest quest = plugin.getQuest(concatArgArray(args, 2, args.length - 1, ' '));
 					if (quest == null) {
 						cs.sendMessage(ChatColor.RED + Lang.get("questNotFound"));
 						return;
@@ -1229,7 +1209,7 @@ public class CmdExecutor implements CommandExecutor {
 					msg = msg.replace("<player>", target.getName());
 					cs.sendMessage(ChatColor.YELLOW + msg);
 				} else {
-					Quest quest = plugin.getQuest(MiscUtil.concatArgArray(args, 2, args.length - 1, ' '));
+					Quest quest = plugin.getQuest(concatArgArray(args, 2, args.length - 1, ' '));
 					if (quest == null) {
 						cs.sendMessage(ChatColor.RED + Lang.get("questNotFound"));
 						return;
@@ -1267,7 +1247,7 @@ public class CmdExecutor implements CommandExecutor {
 					msg = msg.replace("<player>", target.getName());
 					cs.sendMessage(ChatColor.YELLOW + msg);
 				} else {
-					Quest quest = plugin.getQuest(MiscUtil.concatArgArray(args, 2, args.length - 1, ' '));
+					Quest quest = plugin.getQuest(concatArgArray(args, 2, args.length - 1, ' '));
 					if (quest == null) {
 						cs.sendMessage(ChatColor.RED + Lang.get("questNotFound"));
 						return;
@@ -1308,7 +1288,7 @@ public class CmdExecutor implements CommandExecutor {
 						msg = msg.replace("<player>", target.getName());
 						cs.sendMessage(ChatColor.YELLOW + msg);
 					} else {
-						Quest quest = plugin.getQuest(MiscUtil.concatArgArray(args, 2, args.length - 1, ' '));
+						Quest quest = plugin.getQuest(concatArgArray(args, 2, args.length - 1, ' '));
 						if (quest == null) {
 							cs.sendMessage(ChatColor.RED + Lang.get("questNotFound"));
 							return;
@@ -1393,7 +1373,7 @@ public class CmdExecutor implements CommandExecutor {
 				cs.sendMessage(ChatColor.YELLOW + Lang.get("playerNotFound"));
 				return;
 			}
-			Quest toRemove = plugin.getQuest(MiscUtil.concatArgArray(args, 2, args.length - 1, ' '));
+			Quest toRemove = plugin.getQuest(concatArgArray(args, 2, args.length - 1, ' '));
 			if (toRemove == null) {
 				cs.sendMessage(ChatColor.RED + Lang.get("questNotFound"));
 				return;
@@ -1503,5 +1483,23 @@ public class CmdExecutor implements CommandExecutor {
 			sortedMap.put(entry.getKey(), entry.getValue());
 		}
 		return sortedMap;
+	}
+	
+	/**
+	 * Used to get quest names that contain spaces from command input
+	 * 
+	 * @param args an array of Strings
+	 * @param startingIndex the index to start combining at
+	 * @param endingIndex the index to stop combining at
+	 * @param delimiter the character for which the array was split
+	 * @return a String or null
+	 */
+	private static String concatArgArray(String[] args, int startingIndex, int endingIndex, char delimiter) {
+		String s = "";
+		for (int i = startingIndex; i <= endingIndex; i++) {
+			s += args[i] + delimiter;
+		}
+		s = s.substring(0, s.length());
+		return s.trim().equals("") ? null : s.trim();
 	}
 }

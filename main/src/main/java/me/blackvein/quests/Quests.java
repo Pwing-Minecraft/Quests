@@ -277,10 +277,24 @@ public class Quests extends JavaPlugin implements ConversationAbandonedListener 
 		return quests;
 	}
 	
+	public LinkedList<Action> getActions() {
+		return events;
+	}
+	
+	public void setActions(LinkedList<Action> actions) {
+		this.events = actions;
+	}
+	
+	/**
+	 * @deprecated Use getActions()
+	 */
 	public LinkedList<Action> getEvents() {
 		return events;
 	}
 	
+	/**
+	 * @deprecated Use setActions()
+	 */
 	public void setEvents(LinkedList<Action> events) {
 		this.events = events;
 	}
@@ -473,7 +487,7 @@ public class Quests extends JavaPlugin implements ConversationAbandonedListener 
 			@Override
 			public void run() {
 				loadQuests();
-				loadEvents();
+				loadActions();
 				getLogger().log(Level.INFO, "Loaded " + quests.size() + " Quest(s)"
 						+ ", " + events.size() + " Event(s)"
 						+ ", " + Lang.size() + " Phrase(s)");
@@ -489,6 +503,9 @@ public class Quests extends JavaPlugin implements ConversationAbandonedListener 
 		}, 5L);
 	}
 
+	/**
+	 * Load player and NPC GUI data from file
+	 */
 	public void loadData() {
 		YamlConfiguration config = new YamlConfiguration();
 		File dataFile = new File(this.getDataFolder(), "data.yml");
@@ -503,7 +520,10 @@ public class Quests extends JavaPlugin implements ConversationAbandonedListener 
 			questNpcGuis.addAll(ids);
 		}
 	}
-
+	
+	/**
+	 * Load modules from file
+	 */
 	public void loadModules() {
 		File f = new File(this.getDataFolder(), "modules");
 		if (f.exists() && f.isDirectory()) {
@@ -1252,7 +1272,7 @@ public class Quests extends JavaPlugin implements ConversationAbandonedListener 
 		
 		loadQuests();
 		loadData();
-		loadEvents();
+		loadActions();
 		// Reload config from disc in-case a setting was changed
 		reloadConfig();
 		settings.init();
@@ -1325,6 +1345,9 @@ public class Quests extends JavaPlugin implements ConversationAbandonedListener 
 		return qs;
 	}
 
+	/**
+	 * Load quests from file
+	 */
 	public void loadQuests() {
 		boolean failedToLoad;
 		boolean needsSaving = false;
@@ -2714,26 +2737,45 @@ public class Quests extends JavaPlugin implements ConversationAbandonedListener 
 		}
 		throw new StageFailedException();
 	}
-
+	
+	/**
+	 * Load actions from file
+	 * 
+	 * @deprecated Use loadActions()
+	 */
 	public void loadEvents() {
+		loadActions();
+	}
+	
+	/**
+	 * Load actions from file
+	 */
+	public void loadActions() {
 		YamlConfiguration config = new YamlConfiguration();
 		File legacyFile = new File(this.getDataFolder(), "events.yml");
 		File actionsFile = new File(this.getDataFolder(), "actions.yml");
-		if (legacyFile.exists()) {
-			getLogger().log(Level.INFO, "Renaming legacy \"events.yml\" to \"actions.yml\"");
+		// Using isFile() because exists() and renameTo() can return false positives
+		if (legacyFile.isFile()) {
+			getLogger().log(Level.INFO, "Renaming legacy events.yml to actions.yml ...");
 			try {
-				if (legacyFile.renameTo(actionsFile)) {
-					getLogger().log(Level.INFO, "Success! Deleting legacy \"events.yml\" ... done!");
+				legacyFile.renameTo(actionsFile);
+				if (actionsFile.isFile()) {
+					getLogger().log(Level.INFO, "Success! Deleting legacy events.yml ...");
 					legacyFile.delete();
+					getLogger().log(Level.INFO, "Done!");
 				}
 			} catch (Exception e) {
-				getLogger().log(Level.WARNING, "Unable to rename \"events.yml\" to \"actions.yml\"");
+				getLogger().log(Level.WARNING, "Unable to rename events.yml to actions.yml");
 				e.printStackTrace();
 			}
 		}
 		if (actionsFile.length() != 0) {
 			try {
-				config.load(actionsFile);
+				if (actionsFile.isFile()) {
+					config.load(actionsFile);
+				} else {
+					config.load(legacyFile);
+				}
 			} catch (IOException e) {
 				e.printStackTrace();
 			} catch (InvalidConfigurationException e) {
@@ -3174,10 +3216,19 @@ public class Quests extends JavaPlugin implements ConversationAbandonedListener 
 	 * @return Quest or null if not found
 	 */
 	public Quest getQuest(String name) {
-		for (Quest q : quests) {
-			if (q.getName().equalsIgnoreCase(name)) {
+		LinkedList<Quest> qs = quests;
+		for (Quest q : qs) {
+			if (q.getName().equalsIgnoreCase(ChatColor.translateAlternateColorCodes('&', name))) {
 				return q;
-			} else if (q.getName().toLowerCase().startsWith(name.toLowerCase())) {
+			}
+		}
+		for (Quest q : qs) {
+			if (q.getName().toLowerCase().startsWith(ChatColor.translateAlternateColorCodes('&', name).toLowerCase())) {
+				return q;
+			}
+		}
+		for (Quest q : qs) {
+			if (q.getName().toLowerCase().contains(ChatColor.translateAlternateColorCodes('&', name).toLowerCase())) {
 				return q;
 			}
 		}
@@ -3191,11 +3242,20 @@ public class Quests extends JavaPlugin implements ConversationAbandonedListener 
 	 * @return Action or null if not found
 	 */
 	public Action getAction(String name) {
-		for (Action e : events) {
-			if (e.getName().equalsIgnoreCase(name)){
-				return e;
-			} else if (e.getName().toLowerCase().startsWith(name.toLowerCase())) {
-				return e;
+		LinkedList<Action> as = events;
+		for (Action a : as) {
+			if (a.getName().equalsIgnoreCase(ChatColor.translateAlternateColorCodes('&', name))) {
+				return a;
+			}
+		}
+		for (Action a : as) {
+			if (a.getName().toLowerCase().startsWith(ChatColor.translateAlternateColorCodes('&', name).toLowerCase())) {
+				return a;
+			}
+		}
+		for (Action a : as) {
+			if (a.getName().toLowerCase().contains(ChatColor.translateAlternateColorCodes('&', name).toLowerCase())) {
+				return a;
 			}
 		}
 		return null;
@@ -3209,14 +3269,7 @@ public class Quests extends JavaPlugin implements ConversationAbandonedListener 
 	 * @deprecated Use getAction()
 	 */
 	public Action getEvent(String name) {
-		for (Action e : events) {
-			if (e.getName().equalsIgnoreCase(name)){
-				return e;
-			} else if (e.getName().toLowerCase().startsWith(name.toLowerCase())) {
-				return e;
-			}
-		}
-		return null;
+		return getAction(name);
 	}
 
 	public Location getNPCLocation(int id) {
